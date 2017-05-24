@@ -1,0 +1,10 @@
+{
+  "name": "metasyntactical/composer-plugin-license-check",
+  "description": "",
+  "license": "MIT",
+  "type": "composer-plugin",
+  "require": {},
+  "require-dev": {},
+  "autoload": {},
+  "autoload-dev": {}
+}
