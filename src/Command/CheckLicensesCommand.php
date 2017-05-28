@@ -123,7 +123,7 @@ EOT
                 $whitelist = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelist'];
             }
             if (array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'])
+                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'], true)
             ) {
                 $blacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
             }
