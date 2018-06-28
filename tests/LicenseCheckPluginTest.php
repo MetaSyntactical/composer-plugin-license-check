@@ -70,7 +70,7 @@ final class LicenseCheckPluginTest extends TestCase
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.2.0",
+          "php": ">=7.1.0,<7.3.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -150,7 +150,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.2.0",
+          "php": ">=7.1.0,<7.3.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -230,7 +230,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.2.0",
+          "php": ">=7.1.0,<7.3.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
