@@ -55,6 +55,7 @@ EOT
         $io = $this->getIO();
 
         $packagesInfo = $this->calculatePackagesInfo($root, $packages);
+        $violationFound = false;
 
         switch ($format = $input->getOption('format')) {
             case 'text':
@@ -77,11 +78,15 @@ EOT
                         implode(', ', $dependency['license']) ?: 'none',
                         $dependency['allowed_to_use'] ? 'yes' : 'no',
                     ]);
+                    $violationFound = $violationFound || !$dependency['allowed_to_use'];
                 }
                 $table->render();
                 break;
 
             case 'json':
+                foreach ($packagesInfo['dependencies'] as $dependency) {
+                    $violationFound = $violationFound || !$dependency['allowed_to_use'];
+                }
                 $io->write(JsonFile::encode($packagesInfo));
                 break;
 
@@ -90,6 +95,8 @@ EOT
                     sprintf('Unsupported format "%s".  See help for supported formats.', $format)
                 );
         }
+
+        return (int) $violationFound;
     }
 
     private function calculatePackagesInfo(PackageInterface $rootPackage, array $packages): array

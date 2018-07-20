@@ -198,7 +198,7 @@ _EOT;
 
         self::assertContains('1.0.2       MIT           no', $this->cleanOutput($proc->getOutput()));
         self::assertContains('2.0.1       BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(1, (int) $exitcode);
     }
 
     public function testRequiringPackageWithDisallowedLicenseFails()
