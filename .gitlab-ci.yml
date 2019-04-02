@@ -1,5 +1,5 @@
 # Select image from https://hub.docker.com/_/php/
-image: php:7.1-alpine
+image: php:7.3-alpine3.8
 
 # Select what we should cache between builds
 cache:
@@ -10,7 +10,7 @@ before_script:
 # Install additional php extensions
 - docker-php-source extract
 - apk add --no-cache build-base autoconf
-- pecl install xdebug-2.5.3
+- pecl install xdebug-2.7.0
 - docker-php-ext-enable xdebug
 # Install and run composer
 - curl -sS https://getcomposer.org/installer | php
