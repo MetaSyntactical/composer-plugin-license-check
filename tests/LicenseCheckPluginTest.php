@@ -70,7 +70,7 @@ final class LicenseCheckPluginTest extends TestCase
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.3.0",
+          "php": ">=7.1.0,<7.4.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -150,7 +150,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.3.0",
+          "php": ">=7.1.0,<=7.3.3",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -196,7 +196,7 @@ _EOT;
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertContains('1.0.2       MIT           no', $this->cleanOutput($proc->getOutput()));
+        self::assertContains('1.1.0       MIT           no', $this->cleanOutput($proc->getOutput()));
         self::assertContains('2.0.1       BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
         self::assertSame(1, (int) $exitcode);
     }
@@ -230,7 +230,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.3.0",
+          "php": ">=7.1.0,<=7.3.3",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
