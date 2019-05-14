@@ -150,7 +150,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<=7.3.3",
+          "php": ">=7.1.0,<7.4.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -230,7 +230,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<=7.3.3",
+          "php": ">=7.1.0,<7.4.0",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
