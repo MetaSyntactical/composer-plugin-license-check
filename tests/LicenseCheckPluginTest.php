@@ -70,7 +70,7 @@ final class LicenseCheckPluginTest extends TestCase
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.4.0",
+          "php": "7.4.*",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -127,8 +127,8 @@ _EOT;
   "minimum-stability": "stable",
   "require": {
     "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "sebastian/version": "^2.0",
-    "psr/log": "^1.0"
+    "sebastian/version": "2.0.1",
+    "psr/log": "1.1.0"
   },
   "extra": {
     "metasyntactical/composer-plugin-license-check": {
@@ -150,7 +150,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.4.0",
+          "php": "7.4.*",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
@@ -212,7 +212,7 @@ _EOT;
   "minimum-stability": "stable",
   "require": {
     "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "psr/log": "^1.0"
+    "psr/log": "1.1.0"
   },
   "extra": {
     "metasyntactical/composer-plugin-license-check": {
@@ -230,7 +230,7 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": ">=7.1.0,<7.4.0",
+          "php": "7.4.*",
           "composer-plugin-api": "^1.0"
         },
         "require-dev": {
