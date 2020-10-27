@@ -41,7 +41,6 @@ final class LicenseCheckPlugin
     #
     # PluginInterface
     #
-
     public function activate(Composer $composer, IOInterface $io): void
     {
         $this->composer = $composer;
@@ -65,11 +64,16 @@ final class LicenseCheckPlugin
             }
         }
     }
+    
+    public function deactivate(Composer $composer, IOInterface $io)
+    {}
+    
+    public function uninstall(Composer $composer, IOInterface $io)
+    {}
 
     #
     # CapableInterface
     #
-
     public function getCapabilities(): array
     {
         return [
@@ -104,21 +108,22 @@ final class LicenseCheckPlugin
     public function handleEventAndCheckLicense(PackageEvent $event): void
     {
         $operation = $event->getOperation();
-        if (!in_array($operation->getJobType(), ['install', 'update'], true)) {
+        $operationType = (method_exists($operation, 'getJobType')) ? $operation->getJobType() : $operation->getOperationType();
+        if (!in_array($operationType, ['install', 'update'], true)) {
             return;
         }
 
         $package = null;
-        if ($event->getOperation()->getJobType() === 'install') {
+        if ($operationType === 'install') {
             /** @var InstallOperation $operation */
             $package = $operation->getPackage();
         }
-        if ($event->getOperation()->getJobType() === 'update') {
+        if ($operationType === 'update') {
             /** @var UpdateOperation $operation */
             $package = $operation->getTargetPackage();
         }
 
-        if ($package->getName() === self::PLUGIN_PACKAGE_NAME && $event->getOperation()->getJobType() === 'install') {
+        if ($package->getName() === self::PLUGIN_PACKAGE_NAME && $operationType === 'install') {
             $this->composer->getEventDispatcher()->addSubscriber($this);
             if ($event->getIO()->isVerbose()) {
                 $event->getIO()->writeError('<info>The Metasyntactical LicenseCheck Plugin has been enabled.</info>');
