@@ -22,3 +22,6 @@ before_script:
 test:
   script:
   - phpunit --configuration phpunit.xml.dist --coverage-text --colors=never
+  only:
+  - branches
+  - merge_requests

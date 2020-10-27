@@ -6,6 +6,7 @@ use Composer\Util\Filesystem;
 use Composer\Util\Silencer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 final class LicenseCheckPluginTest extends TestCase
 {
@@ -70,11 +71,11 @@ final class LicenseCheckPluginTest extends TestCase
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": "7.4.*",
-          "composer-plugin-api": "^1.0"
+          "php": "7.3.* || 7.4.*",
+          "composer-plugin-api": "^2.0"
         },
         "require-dev": {
-          "composer/composer": "^1.4",
+          "composer/composer": "^2.0@alpha",
           "phpunit/phpunit": "^6.1"
         },
         "autoload": {
@@ -106,13 +107,19 @@ _EOT;
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
         putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
 
-        $cmd = 'php '.escapeshellarg($this->composerExecutable).' --no-ansi -v install';
+        $cmd = [
+            'php',
+            $this->composerExecutable,
+            '--no-ansi',
+            '-v',
+            'install',
+        ];
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
         $errorOutput = $this->cleanOutput($proc->getErrorOutput());
 
-        self::assertContains('The Metasyntactical LicenseCheck Plugin has been enabled.', $errorOutput);
+        self::assertStringContainsString('The Metasyntactical LicenseCheck Plugin has been enabled.', $errorOutput);
         self::assertSame(0, (int) $exitcode);
     }
 
@@ -150,11 +157,11 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": "7.4.*",
-          "composer-plugin-api": "^1.0"
+          "php": "7.3.* || 7.4.*",
+          "composer-plugin-api": "^2.0"
         },
         "require-dev": {
-          "composer/composer": "^1.4",
+          "composer/composer": "^2.0@alpha",
           "phpunit/phpunit": "^6.1"
         },
         "autoload": {
@@ -186,18 +193,30 @@ _EOT;
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
         putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
 
-        $cmd = 'php '.escapeshellarg($this->composerExecutable).' --no-ansi --no-plugins install';
+        $cmd = [
+            'php',
+            $this->composerExecutable,
+            '--no-ansi',
+            '--no-plugins',
+            '-v',
+            'install',
+        ];
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
         self::assertSame(0, (int) $exitcode);
 
-        $cmd = 'php '.escapeshellarg($this->composerExecutable).' --no-ansi check-licenses';
+        $cmd = [
+            'php',
+            $this->composerExecutable,
+            '--no-ansi',
+            'check-licenses',
+        ];
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertContains('1.1.0       MIT           no', $this->cleanOutput($proc->getOutput()));
-        self::assertContains('2.0.1       BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('1.1.0       MIT           no', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('2.0.1       BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
         self::assertSame(1, (int) $exitcode);
     }
 
@@ -230,11 +249,11 @@ _EOT;
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": "7.4.*",
-          "composer-plugin-api": "^1.0"
+          "php": "7.3.* || 7.4.*",
+          "composer-plugin-api": "^2.0"
         },
         "require-dev": {
-          "composer/composer": "^1.4",
+          "composer/composer": "^2.0@alpha",
           "phpunit/phpunit": "^6.1"
         },
         "autoload": {
@@ -266,19 +285,31 @@ _EOT;
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
         putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
 
-        $cmd = 'php '.escapeshellarg($this->composerExecutable).' --no-ansi --no-plugins install';
+        $cmd = [
+            'php',
+            $this->composerExecutable,
+            '--no-ansi',
+            '--no-plugins',
+            'install',
+        ];
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
-        $exitcode = $proc->run();
+        $proc->run();
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
         putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
 
-        $cmd = 'php '.escapeshellarg($this->composerExecutable).' --no-ansi require sebastian/version:^2.0';
+        $cmd = [
+            'php',
+            $this->composerExecutable,
+            '--no-ansi',
+            'require',
+            'sebastian/version:^2.0',
+        ];
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertContains(
+        self::assertStringContainsString(
             'License "BSD-3-Clause" of package "sebastian/version" is not allowed',
             $this->cleanOutput($proc->getErrorOutput())
         );
@@ -291,7 +322,11 @@ _EOT;
         $root = sys_get_temp_dir();
 
         do {
-            $unique = $root . DIRECTORY_SEPARATOR . uniqid('composer-test-' . random_int(1000, 9000), false);
+            try {
+                $unique = $root . DIRECTORY_SEPARATOR . uniqid('composer-test-' . random_int(1000, 9000), false);
+            } catch (Throwable $exception) {
+                continue;
+            }
 
             if (!file_exists($unique) && Silencer::call('mkdir', $unique, 0777)) {
                 return realpath($unique);
