@@ -67,11 +67,7 @@ EOT
 
                 $table = new Table($output);
                 $table->setStyle('compact');
-                if (method_exists($table->getStyle(), 'setVerticalBorderChar')) {
-                    $table->getStyle()->setVerticalBorderChar('');
-                } else {
-                    $table->getStyle()->setVerticalBorderChars('', '');
-                }
+                $table->getStyle()->setVerticalBorderChars('', '');
                 $table->getStyle()->setCellRowContentFormat('%s  ');
                 $table->setHeaders(['Name', 'Version', 'License', 'Allowed to Use?']);
                 /** @noinspection ForeachSourceInspection */
@@ -80,9 +76,9 @@ EOT
                         $dependencyName,
                         $dependency['version'],
                         implode(', ', $dependency['license']) ?: 'none',
-                        $dependency['allowed_to_use'] ? 'yes' : 'no',
+                        $dependency['allowed_to_use'] ? 'yes' : 'no' . ($dependency['whitelisted'] ? ' (whitelisted)' : ''),
                     ]);
-                    $violationFound = $violationFound || !$dependency['allowed_to_use'];
+                    $violationFound = $violationFound || (!$dependency['allowed_to_use'] && !$dependency['whitelisted']);
                 }
                 $table->render();
                 break;
@@ -120,11 +116,12 @@ EOT
 
     private function calculatePackageInfo(PackageInterface $rootPackage, CompletePackageInterface $package): array
     {
-        $allowedToUse = true;
+        $allowedToUse = true; $whitelisted = false;
 
         $extraConfigKey = 'metasyntactical/composer-plugin-license-check';
         $whitelist = [];
         $blacklist = [];
+        $whitelistedPackages = [];
         if (array_key_exists($extraConfigKey, $rootPackage->getExtra())
             && is_array($rootPackage->getExtra()[$extraConfigKey])
         ) {
@@ -138,6 +135,11 @@ EOT
             ) {
                 $blacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
             }
+            if (array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
+                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
+            ) {
+                $whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
+            }
         }
 
         if ($allowedToUse && $blacklist) {
@@ -145,6 +147,9 @@ EOT
         }
         if ($allowedToUse && $whitelist) {
             $allowedToUse = !!array_intersect($package->getLicense(), $whitelist);
+        }
+        if (!$allowedToUse && array_key_exists($package->getPrettyName(), $whitelistedPackages)) {
+            $whitelisted = true;
         }
 
         if ($package->getName() === 'metasyntactical/composer-plugin-license-check') {
@@ -155,6 +160,7 @@ EOT
             'version' => $package->getFullPrettyVersion(),
             'license' => $package->getLicense(),
             'allowed_to_use' => $allowedToUse,
+            'whitelisted' => $whitelisted,
         ];
     }
 

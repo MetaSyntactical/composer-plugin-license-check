@@ -38,6 +38,8 @@ final class LicenseCheckPlugin
 
     private $licenseBlacklist = [];
 
+    private $whitelistedPackages = [];
+
     #
     # PluginInterface
     #
@@ -62,12 +64,17 @@ final class LicenseCheckPlugin
             ) {
                 $this->licenseBlacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
             }
+            if (array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
+                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
+            ) {
+                $this->whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
+            }
         }
     }
-    
+
     public function deactivate(Composer $composer, IOInterface $io)
     {}
-    
+
     public function uninstall(Composer $composer, IOInterface $io)
     {}
 
@@ -156,9 +163,18 @@ final class LicenseCheckPlugin
         }
 
         if (!$allowedToUse) {
-            throw new LicenseNotAllowedException(
+            if (!array_key_exists($package->getPrettyName(), $this->whitelistedPackages)) {
+                throw new LicenseNotAllowedException(
+                    sprintf(
+                        'ERROR: Licenses "%s" of package "%s" are not allowed to be used in the project. Installation failed.',
+                        implode(', ', $packageLicenses),
+                        $package->getPrettyName()
+                    )
+                );
+            }
+            $this->io->writeError(
                 sprintf(
-                    'License "%s" of package "%s" is not allowed to be used in the project. Installation failed.',
+                    'WARNING: Licenses "%s" of package "%s" are not allowed to be used in the project but the package has been whitelisted.',
                     implode(', ', $packageLicenses),
                     $package->getPrettyName()
                 )
