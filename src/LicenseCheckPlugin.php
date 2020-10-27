@@ -24,25 +24,16 @@ final class LicenseCheckPlugin
 {
     private const PLUGIN_PACKAGE_NAME = 'metasyntactical/composer-plugin-license-check';
 
-    /**
-     * @var Composer
-     */
-    private $composer;
+    private Composer $composer;
 
-    /**
-     * @var IOInterface
-     */
-    private $io;
+    private IOInterface $io;
 
-    private $licenseWhitelist = [];
+    private array $licenseWhitelist = [];
 
-    private $licenseBlacklist = [];
+    private array $licenseBlacklist = [];
 
-    private $whitelistedPackages = [];
+    private array $whitelistedPackages = [];
 
-    #
-    # PluginInterface
-    #
     public function activate(Composer $composer, IOInterface $io): void
     {
         $this->composer = $composer;
@@ -78,9 +69,6 @@ final class LicenseCheckPlugin
     public function uninstall(Composer $composer, IOInterface $io)
     {}
 
-    #
-    # CapableInterface
-    #
     public function getCapabilities(): array
     {
         return [
@@ -88,9 +76,6 @@ final class LicenseCheckPlugin
         ];
     }
 
-    #
-    # EventSubscriberInterface
-    #
     public static function getSubscribedEvents(): array
     {
         return [

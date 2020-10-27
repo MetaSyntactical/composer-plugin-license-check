@@ -10,12 +10,12 @@ use Throwable;
 
 final class LicenseCheckPluginTest extends TestCase
 {
-    private $oldcwd;
-    private $oldenv;
-    private $testDir;
-    private $composerHomeDir;
-    private $composerExecutable;
-    private $projectDir;
+    private string $oldcwd;
+    private ?string $oldenv;
+    private ?string $testDir;
+    private string $composerHomeDir;
+    private string $composerExecutable;
+    private string $projectDir;
 
     public function setUp(): void
     {

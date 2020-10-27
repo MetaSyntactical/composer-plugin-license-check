@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class CheckLicensesCommand extends BaseCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('check-licenses')
@@ -35,7 +35,7 @@ EOT
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $composer = $this->getComposer();
 
