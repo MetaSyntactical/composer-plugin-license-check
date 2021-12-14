@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Metasyntactical\Composer\LicenseCheck;
 
@@ -19,8 +21,7 @@ use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Metasyntactical\Composer\LicenseCheck\Command\CommandProvider;
 
-final class LicenseCheckPlugin
-    implements PluginInterface, CapableInterface, EventSubscriberInterface
+final class LicenseCheckPlugin implements PluginInterface, CapableInterface, EventSubscriberInterface
 {
     private const PLUGIN_PACKAGE_NAME = 'metasyntactical/composer-plugin-license-check';
 
@@ -42,20 +43,24 @@ final class LicenseCheckPlugin
         $extraConfigKey = self::PLUGIN_PACKAGE_NAME;
         $rootPackage = $composer->getPackage();
 
-        if (array_key_exists($extraConfigKey, $rootPackage->getExtra())
+        if (
+            array_key_exists($extraConfigKey, $rootPackage->getExtra())
             && is_array($rootPackage->getExtra()[$extraConfigKey])
         ) {
-            if (array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelist']), ['string', 'array'], true)
             ) {
                 $this->licenseWhitelist = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelist'];
             }
-            if (array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'], true)
             ) {
                 $this->licenseBlacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
             }
-            if (array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
             ) {
                 $this->whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
@@ -64,10 +69,12 @@ final class LicenseCheckPlugin
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
-    {}
+    {
+    }
 
     public function uninstall(Composer $composer, IOInterface $io)
-    {}
+    {
+    }
 
     public function getCapabilities(): array
     {

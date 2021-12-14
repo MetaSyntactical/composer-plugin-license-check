@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Metasyntactical\Composer\LicenseCheck\Command;
 
@@ -59,9 +61,9 @@ EOT
 
         switch ($format = $input->getOption('format')) {
             case 'text':
-                $io->write('Name: <comment>'.$packagesInfo['name'].'</comment>');
-                $io->write('Version: <comment>'.$packagesInfo['version'].'</comment>');
-                $io->write('Licenses: <comment>'.(implode(', ', $packagesInfo['license']) ?: 'none').'</comment>');
+                $io->write('Name: <comment>' . $packagesInfo['name'] . '</comment>');
+                $io->write('Version: <comment>' . $packagesInfo['version'] . '</comment>');
+                $io->write('Licenses: <comment>' . (implode(', ', $packagesInfo['license']) ?: 'none') . '</comment>');
                 $io->write('Dependencies:');
                 $io->write('');
 
@@ -122,26 +124,31 @@ EOT
 
     private function calculatePackageInfo(PackageInterface $rootPackage, CompletePackageInterface $package): array
     {
-        $allowedToUse = true; $whitelisted = false;
+        $allowedToUse = true;
+        $whitelisted = false;
 
         $extraConfigKey = 'metasyntactical/composer-plugin-license-check';
         $whitelist = [];
         $blacklist = [];
         $whitelistedPackages = [];
-        if (array_key_exists($extraConfigKey, $rootPackage->getExtra())
+        if (
+            array_key_exists($extraConfigKey, $rootPackage->getExtra())
             && is_array($rootPackage->getExtra()[$extraConfigKey])
         ) {
-            if (array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelist']), ['string', 'array'], true)
             ) {
                 $whitelist = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelist'];
             }
-            if (array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'], true)
             ) {
                 $blacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
             }
-            if (array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
+            if (
+                array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
                 && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
             ) {
                 $whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
@@ -171,9 +178,10 @@ EOT
     }
 
     private function filterRequiredPackages(
-        RepositoryInterface $repo, PackageInterface $package, array $bucket = []
-    ): array
-    {
+        RepositoryInterface $repo,
+        PackageInterface $package,
+        array $bucket = []
+    ): array {
         $requires = array_keys($package->getRequires());
 
         $packageListNames = array_keys($bucket);

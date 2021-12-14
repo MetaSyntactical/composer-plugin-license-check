@@ -24,16 +24,16 @@ final class LicenseCheckPluginTest extends TestCase
 
     public function setUp(): void
     {
-        $this->cmdAsArray = version_compare(InstalledVersions::getVersion('symfony/process' ), '3.3.0', 'ge');
+        $this->cmdAsArray = version_compare(InstalledVersions::getVersion('symfony/process'), '3.3.0', 'ge');
 
         $this->oldcwd = getcwd();
         $this->testDir = self::getUniqueTmpDirectory();
-        $this->composerHomeDir = $this->testDir.'/home';
-        $this->composerExecutable = dirname(__DIR__).'/vendor/bin/composer';
-        $this->projectDir = $this->testDir.'/project';
+        $this->composerHomeDir = $this->testDir . '/home';
+        $this->composerExecutable = dirname(__DIR__) . '/vendor/bin/composer';
+        $this->projectDir = $this->testDir . '/project';
         self::ensureDirectoryExistsAndClear($this->composerHomeDir);
         self::ensureDirectoryExistsAndClear($this->projectDir);
-        file_put_contents($this->composerHomeDir.'/composer.json', '{"notify-on-install": false}');
+        file_put_contents($this->composerHomeDir . '/composer.json', '{"notify-on-install": false}');
 
         chdir($this->projectDir);
     }
@@ -52,7 +52,7 @@ final class LicenseCheckPluginTest extends TestCase
         if ($this->oldenv) {
             $fs->removeDirectory(getenv('COMPOSER_HOME'));
             $_SERVER['COMPOSER_HOME'] = $this->oldenv;
-            putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+            putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
             $this->oldenv = null;
         }
     }
@@ -64,7 +64,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -110,7 +110,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -169,7 +169,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -224,7 +224,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -241,7 +241,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -286,7 +286,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -303,7 +303,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME='.$_SERVER['COMPOSER_HOME']);
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -436,7 +436,7 @@ _EOT;
     private function escapeArgument(string $argument): string
     {
         if ('\\' !== DIRECTORY_SEPARATOR) {
-            return "'".str_replace("'", "'\\''", $argument)."'";
+            return "'" . str_replace("'", "'\\''", $argument) . "'";
         }
         if ('' === $argument = (string) $argument) {
             return '""';
@@ -449,6 +449,6 @@ _EOT;
         }
         $argument = preg_replace('/(\\\\+)$/', '$1$1', $argument);
 
-        return '"'.str_replace(array('"', '^', '%', '!', "\n"), array('""', '"^^"', '"^%"', '"^!"', '!LF!'), $argument).'"';
+        return '"' . str_replace(array('"', '^', '%', '!', "\n"), array('""', '"^^"', '"^%"', '"^!"', '!LF!'), $argument) . '"';
     }
 }
