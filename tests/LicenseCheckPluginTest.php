@@ -8,6 +8,9 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 use Throwable;
 
+/**
+ * @group integration
+ */
 final class LicenseCheckPluginTest extends TestCase
 {
     private string $oldcwd;
@@ -53,55 +56,7 @@ final class LicenseCheckPluginTest extends TestCase
     public function testLoadingOfPluginSucceeds()
     {
         $projectRoot = dirname(__DIR__);
-        $composerJson =<<<_EOT
-{
-  "name": "metasyntactical/composer-plugin-license-check-test",
-  "license": "MIT",
-  "type": "project",
-  "minimum-stability": "dev",
-  "require": {
-    "metasyntactical/composer-plugin-license-check": "dev-master"
-  },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
-        "license": "MIT",
-        "type": "composer-plugin",
-        "require": {
-          "php": "7.3.* || 7.4.*",
-          "composer-plugin-api": "^2.0"
-        },
-        "require-dev": {
-          "composer/composer": "^2.0@alpha",
-          "phpunit/phpunit": "^6.1"
-        },
-        "autoload": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
-          }
-        },
-        "autoload-dev": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
-          }
-        },
-        "extra": {
-          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
-        },
-        "version": "dev-master",
-        "dist": {
-          "url": "{$projectRoot}",
-          "type": "path"
-        }
-      }
-    }
-  ]
-}
-_EOT;
-        file_put_contents($this->projectDir.'/composer.json', $composerJson);
+        $this->writeComposerJson($projectRoot);
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
@@ -126,68 +81,25 @@ _EOT;
     public function testLicenseCheckCommand()
     {
         $projectRoot = dirname(__DIR__);
-        $composerJson =<<<_EOT
-{
-  "name": "metasyntactical/composer-plugin-license-check-test",
-  "license": "MIT",
-  "type": "project",
-  "minimum-stability": "stable",
-  "require": {
-    "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "sebastian/version": "2.0.1",
-    "psr/log": "1.1.0"
-  },
-  "extra": {
-    "metasyntactical/composer-plugin-license-check": {
-      "whitelist": [
-        "MIT",
-        "BSD-3-Clause"
-      ],
-      "blacklist": [
-        "MIT"
-      ]
-    }
-  },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
-        "license": "MIT",
-        "type": "composer-plugin",
-        "require": {
-          "php": "7.3.* || 7.4.*",
-          "composer-plugin-api": "^2.0"
-        },
-        "require-dev": {
-          "composer/composer": "^2.0@alpha",
-          "phpunit/phpunit": "^6.1"
-        },
-        "autoload": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
-          }
-        },
-        "autoload-dev": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
-          }
-        },
-        "extra": {
-          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
-        },
-        "version": "dev-master",
-        "dist": {
-          "url": "{$projectRoot}",
-          "type": "path"
-        }
-      }
-    }
-  ]
-}
-_EOT;
-        file_put_contents($this->projectDir.'/composer.json', $composerJson);
+        $this->writeComposerJson(
+            $projectRoot,
+            [
+                "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
+                "sebastian/version" => "2.0.1",
+                "psr/log" => "1.1.0",
+            ],
+            [
+                "metasyntactical/composer-plugin-license-check" => [
+                    "whitelist" => [
+                        "MIT",
+                        "BSD-3-Clause",
+                    ],
+                    "blacklist" => [
+                        "MIT",
+                    ],
+                ],
+            ],
+        );
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
@@ -215,75 +127,32 @@ _EOT;
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertStringContainsString('1.1.0       MIT           no', $this->cleanOutput($proc->getOutput()));
-        self::assertStringContainsString('2.0.1       BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('1.1.0     MIT           no', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('2.0.1     BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
         self::assertSame(1, (int) $exitcode);
     }
 
     public function testLicenseCheckCommandWithWhitelistedPackage()
     {
         $projectRoot = dirname(__DIR__);
-        $composerJson =<<<_EOT
-{
-  "name": "metasyntactical/composer-plugin-license-check-test",
-  "license": "MIT",
-  "type": "project",
-  "minimum-stability": "stable",
-  "require": {
-    "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "sebastian/version": "2.0.1",
-    "psr/log": "1.1.0"
-  },
-  "extra": {
-    "metasyntactical/composer-plugin-license-check": {
-      "whitelist": [
-        "MIT"
-      ],
-      "whitelisted-packages": {
-        "sebastian/version": "*"
-      }
-    }
-  },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
-        "license": "MIT",
-        "type": "composer-plugin",
-        "require": {
-          "php": "7.3.* || 7.4.*",
-          "composer-plugin-api": "^2.0"
-        },
-        "require-dev": {
-          "composer/composer": "^2.0@alpha",
-          "phpunit/phpunit": "^6.1"
-        },
-        "autoload": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
-          }
-        },
-        "autoload-dev": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
-          }
-        },
-        "extra": {
-          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
-        },
-        "version": "dev-master",
-        "dist": {
-          "url": "{$projectRoot}",
-          "type": "path"
-        }
-      }
-    }
-  ]
-}
-_EOT;
-        file_put_contents($this->projectDir.'/composer.json', $composerJson);
+        $this->writeComposerJson(
+            $projectRoot,
+            [
+                "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
+                "sebastian/version" => "2.0.1",
+                "psr/log" => "1.1.0",
+            ],
+            [
+                "metasyntactical/composer-plugin-license-check" => [
+                    'whitelist' => [
+                        'MIT',
+                    ],
+                    'whitelisted-packages' => [
+                        'sebastian/version' => '*',
+                    ],
+                ],
+            ],
+        );
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
@@ -311,71 +180,28 @@ _EOT;
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertStringContainsString('1.1.0       MIT           yes', $this->cleanOutput($proc->getOutput()));
-        self::assertStringContainsString('2.0.1       BSD-3-Clause  no (whitelisted)', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('1.1.0     MIT           yes', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('2.0.1     BSD-3-Clause  no (whitelisted)', $this->cleanOutput($proc->getOutput()));
         self::assertSame(0, (int) $exitcode);
     }
 
     public function testRequiringPackageWithDisallowedLicenseFails()
     {
         $projectRoot = dirname(__DIR__);
-        $composerJson =<<<_EOT
-{
-  "name": "metasyntactical/composer-plugin-license-check-test",
-  "license": "MIT",
-  "type": "project",
-  "minimum-stability": "stable",
-  "require": {
-    "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "psr/log": "1.1.0"
-  },
-  "extra": {
-    "metasyntactical/composer-plugin-license-check": {
-      "whitelist": [
-        "MIT"
-      ]
-    }
-  },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
-        "license": "MIT",
-        "type": "composer-plugin",
-        "require": {
-          "php": "7.3.* || 7.4.*",
-          "composer-plugin-api": "^2.0"
-        },
-        "require-dev": {
-          "composer/composer": "^2.0@alpha",
-          "phpunit/phpunit": "^6.1"
-        },
-        "autoload": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
-          }
-        },
-        "autoload-dev": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
-          }
-        },
-        "extra": {
-          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
-        },
-        "version": "dev-master",
-        "dist": {
-          "url": "{$projectRoot}",
-          "type": "path"
-        }
-      }
-    }
-  ]
-}
-_EOT;
-        file_put_contents($this->projectDir.'/composer.json', $composerJson);
+        $this->writeComposerJson(
+            $projectRoot,
+            [
+                "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
+                "psr/log" => "1.1.0",
+            ],
+            [
+                "metasyntactical/composer-plugin-license-check" => [
+                    'whitelist' => [
+                        'MIT',
+                    ],
+                ],
+            ],
+        );
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
@@ -415,66 +241,23 @@ _EOT;
     public function testLicenseCheckSucceedsWithWarningIfPackageIsWhitelisted(): void
     {
         $projectRoot = dirname(__DIR__);
-        $composerJson =<<<_EOT
-{
-  "name": "metasyntactical/composer-plugin-license-check-test",
-  "license": "MIT",
-  "type": "project",
-  "minimum-stability": "stable",
-  "require": {
-    "metasyntactical/composer-plugin-license-check": "dev-master@dev",
-    "psr/log": "1.1.0"
-  },
-  "extra": {
-    "metasyntactical/composer-plugin-license-check": {
-      "whitelist": [
-        "MIT"
-      ],
-      "whitelisted-packages": {
-        "sebastian/version": "*"
-      }
-    }
-  },
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
-        "license": "MIT",
-        "type": "composer-plugin",
-        "require": {
-          "php": "7.3.* || 7.4.*",
-          "composer-plugin-api": "^2.0"
-        },
-        "require-dev": {
-          "composer/composer": "^2.0@alpha",
-          "phpunit/phpunit": "^6.1"
-        },
-        "autoload": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
-          }
-        },
-        "autoload-dev": {
-          "psr-4": {
-            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
-          }
-        },
-        "extra": {
-          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
-        },
-        "version": "dev-master",
-        "dist": {
-          "url": "{$projectRoot}",
-          "type": "path"
-        }
-      }
-    }
-  ]
-}
-_EOT;
-        file_put_contents($this->projectDir.'/composer.json', $composerJson);
+        $this->writeComposerJson(
+            $projectRoot,
+            [
+                "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
+                "psr/log" => "1.1.0",
+            ],
+            [
+                "metasyntactical/composer-plugin-license-check" => [
+                    'whitelist' => [
+                        'MIT',
+                    ],
+                    'whitelisted-packages' => [
+                        'sebastian/version' => '*',
+                    ],
+                ],
+            ],
+        );
 
         $this->oldenv = getenv('COMPOSER_HOME');
         $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
@@ -557,5 +340,64 @@ _EOT;
         }
 
         return $processed;
+    }
+
+    private function writeComposerJson(string $projectRoot, array $requires = null, array $extra = []): void
+    {
+        if ($requires === null) {
+            $requires = [
+                "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
+            ];
+        }
+        $requiresJson = json_encode($requires, JSON_THROW_ON_ERROR);
+        $extraJson = json_encode($extra, JSON_THROW_ON_ERROR);
+        $composerJson = <<<_EOT
+{
+  "name": "metasyntactical/composer-plugin-license-check-test",
+  "license": "MIT",
+  "type": "project",
+  "minimum-stability": "dev",
+  "require": {$requiresJson},
+  "extra": {$extraJson},
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "metasyntactical/composer-plugin-license-check",
+        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
+        "license": "MIT",
+        "type": "composer-plugin",
+        "require": {
+          "php": "8.0.* || 8.1.*",
+          "composer-plugin-api": "^2.0"
+        },
+        "require-dev": {
+          "composer/composer": "^2.0",
+          "phpunit/phpunit": "^9.5"
+        },
+        "autoload": {
+          "psr-4": {
+            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "src/"
+          }
+        },
+        "autoload-dev": {
+          "psr-4": {
+            "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\": "tests/"
+          }
+        },
+        "extra": {
+          "class": "Metasyntactical\\\\Composer\\\\LicenseCheck\\\\LicenseCheckPlugin"
+        },
+        "version": "dev-main",
+        "dist": {
+          "url": "{$projectRoot}",
+          "type": "path"
+        }
+      }
+    }
+  ]
+}
+_EOT;
+        file_put_contents($this->projectDir . '/composer.json', $composerJson);
     }
 }
