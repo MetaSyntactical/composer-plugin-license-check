@@ -11,19 +11,20 @@ use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
+use Composer\IO\NullIO;
 use Composer\Package\CompletePackageInterface;
+use Composer\Package\RootPackageInterface;
+use Composer\Plugin\Capability\Capability as CapabilityInterface;
 use Composer\Plugin\Capability\CommandProvider as CommandProviderCapability;
 use Composer\Plugin\Capable as CapableInterface;
 use Composer\Plugin\CommandEvent;
 use Composer\Plugin\PluginEvents;
 use Composer\Plugin\PluginInterface;
-use Composer\Script\Event;
-use Composer\Script\ScriptEvents;
 use Metasyntactical\Composer\LicenseCheck\Command\CommandProvider;
 
 final class LicenseCheckPlugin implements PluginInterface, CapableInterface, EventSubscriberInterface
 {
-    private const PLUGIN_PACKAGE_NAME = 'metasyntactical/composer-plugin-license-check';
+    public const PLUGIN_PACKAGE_NAME = 'metasyntactical/composer-plugin-license-check';
 
     private Composer $composer;
 
@@ -35,47 +36,37 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
 
     private array $whitelistedPackages = [];
 
+    public function __construct()
+    {
+        $this->io = new NullIO();
+        $this->composer = new Composer();
+    }
+
     public function activate(Composer $composer, IOInterface $io): void
     {
         $this->composer = $composer;
         $this->io = $io;
 
-        $extraConfigKey = self::PLUGIN_PACKAGE_NAME;
         $rootPackage = $composer->getPackage();
 
-        if (
-            array_key_exists($extraConfigKey, $rootPackage->getExtra())
-            && is_array($rootPackage->getExtra()[$extraConfigKey])
-        ) {
-            if (
-                array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelist']), ['string', 'array'], true)
-            ) {
-                $this->licenseWhitelist = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelist'];
-            }
-            if (
-                array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'], true)
-            ) {
-                $this->licenseBlacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
-            }
-            if (
-                array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
-            ) {
-                $this->whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
-            }
-        }
+        $config = $this->getConfig($rootPackage);
+
+        $this->licenseWhitelist = $config->whitelist();
+        $this->licenseBlacklist = $config->blacklist();
+        $this->whitelistedPackages = $config->whitelistedPackages();
     }
 
-    public function deactivate(Composer $composer, IOInterface $io)
+    public function deactivate(Composer $composer, IOInterface $io): void
     {
     }
 
-    public function uninstall(Composer $composer, IOInterface $io)
+    public function uninstall(Composer $composer, IOInterface $io): void
     {
     }
 
+    /**
+     * @psalm-return array<class-string, class-string>
+     */
     public function getCapabilities(): array
     {
         return [
@@ -107,47 +98,46 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
     public function handleEventAndCheckLicense(PackageEvent $event): void
     {
         $operation = $event->getOperation();
-        $operationType = (method_exists($operation, 'getJobType')) ? $operation->getJobType() : $operation->getOperationType();
-        if (!in_array($operationType, ['install', 'update'], true)) {
-            return;
-        }
+        $operationType = $operation->getOperationType();
 
-        $package = null;
-        if ($operationType === 'install') {
-            /** @var InstallOperation $operation */
-            $package = $operation->getPackage();
-        }
-        if ($operationType === 'update') {
-            /** @var UpdateOperation $operation */
-            $package = $operation->getTargetPackage();
-        }
+        switch ($operationType) {
+            case InstallOperation::TYPE:
+                /** @var InstallOperation $operation */
+                $package = $operation->getPackage();
 
-        if ($package->getName() === self::PLUGIN_PACKAGE_NAME && $operationType === 'install') {
-            $this->composer->getEventDispatcher()->addSubscriber($this);
-            if ($event->getIO()->isVerbose()) {
-                $event->getIO()->writeError('<info>The Metasyntactical LicenseCheck Plugin has been enabled.</info>');
-            }
+                if ($package->getName() === self::PLUGIN_PACKAGE_NAME) {
+                    $this->composer->getEventDispatcher()->addSubscriber($this);
+                    if ($event->getIO()->isVerbose()) {
+                        $event->getIO()->writeError('<info>The Metasyntactical LicenseCheck Plugin has been enabled.</info>');
+                    }
+                }
+                break;
+            case UpdateOperation::TYPE:
+                /** @var UpdateOperation $operation */
+                $package = $operation->getTargetPackage();
+                break;
+            default:
+                return;
         }
 
         if ($package->getName() === self::PLUGIN_PACKAGE_NAME) {
             // Skip license check. It is assumed that the licence checker itself is
-            // added to the dependencies on purpose and therefore the license the
+            // added to the dependencies on purpose and therefore the license of the
             // license checker is provided with (MIT) is accepted.
             return;
         }
 
         $packageLicenses = [];
         if (is_a($package, CompletePackageInterface::class)) {
-            /** @var CompletePackageInterface $package */
             $packageLicenses = $package->getLicense();
         }
 
         $allowedToUse = true;
-        if ($allowedToUse && $this->licenseBlacklist) {
+        if ($this->licenseBlacklist) {
             $allowedToUse = !array_intersect($packageLicenses, $this->licenseBlacklist);
         }
         if ($allowedToUse && $this->licenseWhitelist) {
-            $allowedToUse = !!array_intersect($packageLicenses, $this->licenseWhitelist);
+            $allowedToUse = (bool) array_intersect($packageLicenses, $this->licenseWhitelist);
         }
 
         if ($package->getName() === 'metasyntactical/composer-plugin-license-check') {
@@ -172,5 +162,14 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
                 )
             );
         }
+    }
+
+    private function getConfig(RootPackageInterface $package): ComposerConfig
+    {
+        $config = $package->getExtra()[self::PLUGIN_PACKAGE_NAME] ?? [];
+        assert(is_array($config));
+        /** @psalm-var array{whitelist?: list<mixed>, blacklist?: list<mixed>, whitelisted-packages?: list<mixed>} $config */
+
+        return new ComposerConfig($config);
     }
 }

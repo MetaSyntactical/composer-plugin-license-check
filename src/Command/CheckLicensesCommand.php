@@ -8,9 +8,12 @@ use Composer\Command\BaseCommand;
 use Composer\Json\JsonFile;
 use Composer\Package\CompletePackageInterface;
 use Composer\Package\PackageInterface;
+use Composer\Package\RootPackageInterface;
 use Composer\Plugin\CommandEvent;
 use Composer\Plugin\PluginEvents;
 use Composer\Repository\RepositoryInterface;
+use Metasyntactical\Composer\LicenseCheck\ComposerConfig;
+use Metasyntactical\Composer\LicenseCheck\LicenseCheckPlugin;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -37,9 +40,15 @@ EOT
         ;
     }
 
+    /**
+     * @psalm-return 0|1
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $composer = $this->getComposer();
+        if ($composer === null) {
+            throw new \LogicException('Composer not found. Maybe the application is not correctly instantiated?');
+        }
 
         $commandEvent = new CommandEvent(PluginEvents::COMMAND, 'check-licenses', $input, $output);
         $composer->getEventDispatcher()->dispatch($commandEvent->getName(), $commandEvent);
@@ -50,16 +59,21 @@ EOT
         if ($input->getOption('no-dev')) {
             $packages = $this->filterRequiredPackages($repo, $root);
         } else {
-            $packages = $this->appendPackages($repo->getPackages(), []);
+            /** @psalm-var list<CompletePackageInterface> $additionalPackages */
+            $additionalPackages = $repo->getPackages();
+            $packages = $this->appendPackages($additionalPackages, []);
         }
 
         ksort($packages);
         $io = $this->getIO();
 
-        $packagesInfo = $this->calculatePackagesInfo($root, $packages);
+        $packagesInfo = $this->calculatePackagesInfo($root, array_values($packages));
         $violationFound = false;
 
-        switch ($format = $input->getOption('format')) {
+        $format = $input->getOption('format');
+        assert(is_string($format));
+
+        switch ($format) {
             case 'text':
                 $io->write('Name: <comment>' . $packagesInfo['name'] . '</comment>');
                 $io->write('Version: <comment>' . $packagesInfo['version'] . '</comment>');
@@ -78,7 +92,6 @@ EOT
                 }
                 $table->getStyle()->setCellRowContentFormat('%s  ');
                 $table->setHeaders(['Name', 'Version', 'License', 'Allowed to Use?']);
-                /** @noinspection ForeachSourceInspection */
                 foreach ($packagesInfo['dependencies'] as $dependencyName => $dependency) {
                     $table->addRow([
                         $dependencyName,
@@ -100,62 +113,69 @@ EOT
 
             default:
                 throw new RuntimeException(
-                    sprintf('Unsupported format "%s".  See help for supported formats.', $format)
+                    sprintf('Unsupported format "%s". See help for supported formats.', $format)
                 );
         }
 
         return (int) $violationFound;
     }
 
-    private function calculatePackagesInfo(PackageInterface $rootPackage, array $packages): array
+    /**
+     * @psalm-param list<CompletePackageInterface> $packages
+     * @psalm-return array{
+     *                  name: string,
+     *                  version: string,
+     *                  license: list<string>,
+     *                  dependencies: array<string, array{
+     *                      version: string,
+     *                      license: list<string>,
+     *                      allowed_to_use: bool,
+     *                      whitelisted: bool
+     *                  }>
+     *               }
+     */
+    private function calculatePackagesInfo(RootPackageInterface $rootPackage, array $packages): array
     {
         $dependencies = [];
         foreach ($packages as $package) {
             $dependencies[$package->getPrettyName()] = $this->calculatePackageInfo($rootPackage, $package);
         }
 
+        /** @psalm-var list<string> $rootLicense */
+        $rootLicense = $rootPackage->getLicense();
+
         return [
             'name' => $rootPackage->getPrettyName(),
             'version' => $rootPackage->getFullPrettyVersion(),
-            'license' => $rootPackage->getLicense(),
+            'license' => $rootLicense,
             'dependencies' => $dependencies,
         ];
     }
 
-    private function calculatePackageInfo(PackageInterface $rootPackage, CompletePackageInterface $package): array
+    private function getConfig(RootPackageInterface $package): ComposerConfig
+    {
+        $config = $package->getExtra()[LicenseCheckPlugin::PLUGIN_PACKAGE_NAME] ?? [];
+        assert(is_array($config));
+        /** @psalm-var array{whitelist?: list<mixed>, blacklist?: list<mixed>, whitelisted-packages?: list<mixed>} $config */
+
+        return new ComposerConfig($config);
+    }
+
+    /**
+     * @psalm-return array{version: string, license: list<string>, allowed_to_use: bool, whitelisted: bool}
+     */
+    private function calculatePackageInfo(RootPackageInterface $rootPackage, CompletePackageInterface $package): array
     {
         $allowedToUse = true;
         $whitelisted = false;
 
-        $extraConfigKey = 'metasyntactical/composer-plugin-license-check';
-        $whitelist = [];
-        $blacklist = [];
-        $whitelistedPackages = [];
-        if (
-            array_key_exists($extraConfigKey, $rootPackage->getExtra())
-            && is_array($rootPackage->getExtra()[$extraConfigKey])
-        ) {
-            if (
-                array_key_exists('whitelist', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelist']), ['string', 'array'], true)
-            ) {
-                $whitelist = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelist'];
-            }
-            if (
-                array_key_exists('blacklist', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['blacklist']), ['string', 'array'], true)
-            ) {
-                $blacklist = (array) $rootPackage->getExtra()[$extraConfigKey]['blacklist'];
-            }
-            if (
-                array_key_exists('whitelisted-packages', $rootPackage->getExtra()[$extraConfigKey])
-                && in_array(gettype($rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages']), ['array'], true)
-            ) {
-                $whitelistedPackages = (array) $rootPackage->getExtra()[$extraConfigKey]['whitelisted-packages'];
-            }
-        }
+        $config = $this->getConfig($rootPackage);
 
-        if ($allowedToUse && $blacklist) {
+        $whitelist = $config->whitelist();
+        $blacklist = $config->blacklist();
+        $whitelistedPackages = $config->whitelistedPackages();
+
+        if ($blacklist) {
             $allowedToUse = !array_intersect($package->getLicense(), $blacklist);
         }
         if ($allowedToUse && $whitelist) {
@@ -169,14 +189,21 @@ EOT
             $allowedToUse = true;
         }
 
+        /** @psalm-var list<string> $packageLicense */
+        $packageLicense = $package->getLicense();
+
         return [
             'version' => $package->getFullPrettyVersion(),
-            'license' => $package->getLicense(),
+            'license' => $packageLicense,
             'allowed_to_use' => $allowedToUse,
             'whitelisted' => $whitelisted,
         ];
     }
 
+    /**
+     * @psalm-param array<string, CompletePackageInterface> $bucket
+     * @psalm-return array<string, CompletePackageInterface>
+     */
     private function filterRequiredPackages(
         RepositoryInterface $repo,
         PackageInterface $package,
@@ -185,9 +212,10 @@ EOT
         $requires = array_keys($package->getRequires());
 
         $packageListNames = array_keys($bucket);
+        /** @psalm-var list<CompletePackageInterface> $filteredPackages */
         $filteredPackages = array_filter(
             $repo->getPackages(),
-            function (PackageInterface $package) use ($requires, $packageListNames) {
+            static function (PackageInterface $package) use ($requires, $packageListNames) {
                 return in_array($package->getName(), $requires, true)
                     && !in_array($package->getName(), $packageListNames, true);
             }
@@ -202,6 +230,11 @@ EOT
         return $bucket;
     }
 
+    /**
+     * @psalm-param list<CompletePackageInterface> $packages
+     * @psalm-param array<string, CompletePackageInterface> $bucket
+     * @psalm-return array<string, CompletePackageInterface>
+     */
     public function appendPackages(array $packages, array $bucket): array
     {
         foreach ($packages as $package) {

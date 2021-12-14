@@ -14,17 +14,19 @@ use Throwable;
  */
 final class LicenseCheckPluginTest extends TestCase
 {
+    private const COMPOSER_REQUIRES_SYMFONY_PROCESS_MIN = '2.1.0';
+
     private string $oldcwd;
-    private ?string $oldenv;
+    private ?string $oldenv = null;
     private ?string $testDir;
     private string $composerHomeDir;
     private string $composerExecutable;
     private string $projectDir;
-    private bool $cmdAsArray = false;
+    private bool $cmdAsArray;
 
     public function setUp(): void
     {
-        $this->cmdAsArray = version_compare(InstalledVersions::getVersion('symfony/process'), '3.3.0', 'ge');
+        $this->cmdAsArray = version_compare(InstalledVersions::getVersion('symfony/process') ?? self::COMPOSER_REQUIRES_SYMFONY_PROCESS_MIN, '3.3.0', 'ge');
 
         $this->oldcwd = getcwd();
         $this->testDir = self::getUniqueTmpDirectory();
@@ -49,22 +51,40 @@ final class LicenseCheckPluginTest extends TestCase
             $this->testDir = null;
         }
 
+        $this->resetComposerHome($fs);
+    }
+
+    private function resetComposerHome(Filesystem $fs): void
+    {
         if ($this->oldenv) {
-            $fs->removeDirectory(getenv('COMPOSER_HOME'));
-            $_SERVER['COMPOSER_HOME'] = $this->oldenv;
-            putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
-            $this->oldenv = null;
+            $composerHome = getenv('COMPOSER_HOME');
+            if (is_string($composerHome)) {
+                $fs->removeDirectory($composerHome);
+                $_SERVER['COMPOSER_HOME'] = $this->oldenv;
+                putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+                $this->oldenv = null;
+            }
         }
     }
 
-    public function testLoadingOfPluginSucceeds()
+    private function setComposerHome(): void
+    {
+        $oldenv = getenv('COMPOSER_HOME');
+        if (!is_string($oldenv)) {
+            return;
+        }
+
+        $this->oldenv = $oldenv;
+        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
+        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+    }
+
+    public function testLoadingOfPluginSucceeds(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson($projectRoot);
 
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+        $this->setComposerHome();
 
         $cmd = [
             'php',
@@ -82,10 +102,10 @@ final class LicenseCheckPluginTest extends TestCase
         $errorOutput = $this->cleanOutput($proc->getErrorOutput());
 
         self::assertStringContainsString('The Metasyntactical LicenseCheck Plugin has been enabled.', $errorOutput);
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(0, $exitcode);
     }
 
-    public function testLicenseCheckCommand()
+    public function testLicenseCheckCommand(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson(
@@ -108,9 +128,7 @@ final class LicenseCheckPluginTest extends TestCase
             ],
         );
 
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+        $this->setComposerHome();
 
         $cmd = [
             'php',
@@ -126,7 +144,7 @@ final class LicenseCheckPluginTest extends TestCase
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(0, $exitcode);
 
         $cmd = [
             'php',
@@ -142,10 +160,10 @@ final class LicenseCheckPluginTest extends TestCase
 
         self::assertStringContainsString('1.1.0     MIT           no', $this->cleanOutput($proc->getOutput()));
         self::assertStringContainsString('2.0.1     BSD-3-Clause  yes', $this->cleanOutput($proc->getOutput()));
-        self::assertSame(1, (int) $exitcode);
+        self::assertSame(1, $exitcode);
     }
 
-    public function testLicenseCheckCommandWithWhitelistedPackage()
+    public function testLicenseCheckCommandWithWhitelistedPackage(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson(
@@ -167,9 +185,7 @@ final class LicenseCheckPluginTest extends TestCase
             ],
         );
 
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+        $this->setComposerHome();
 
         $cmd = [
             'php',
@@ -185,7 +201,7 @@ final class LicenseCheckPluginTest extends TestCase
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(0, $exitcode);
 
         $cmd = [
             'php',
@@ -201,10 +217,10 @@ final class LicenseCheckPluginTest extends TestCase
 
         self::assertStringContainsString('1.1.0     MIT           yes', $this->cleanOutput($proc->getOutput()));
         self::assertStringContainsString('2.0.1     BSD-3-Clause  no (whitelisted)', $this->cleanOutput($proc->getOutput()));
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(0, $exitcode);
     }
 
-    public function testRequiringPackageWithDisallowedLicenseFails()
+    public function testRequiringPackageWithDisallowedLicenseFails(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson(
@@ -222,9 +238,7 @@ final class LicenseCheckPluginTest extends TestCase
             ],
         );
 
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+        $this->setComposerHome();
 
         $cmd = [
             'php',
@@ -238,10 +252,6 @@ final class LicenseCheckPluginTest extends TestCase
         }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $proc->run();
-
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -260,7 +270,7 @@ final class LicenseCheckPluginTest extends TestCase
             'ERROR: Licenses "BSD-3-Clause" of package "sebastian/version" are not allow',
             $this->cleanOutput($proc->getErrorOutput())
         );
-        self::assertSame(1, (int) $exitcode);
+        self::assertSame(1, $exitcode);
     }
 
     public function testLicenseCheckSucceedsWithWarningIfPackageIsWhitelisted(): void
@@ -284,9 +294,7 @@ final class LicenseCheckPluginTest extends TestCase
             ],
         );
 
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
+        $this->setComposerHome();
 
         $cmd = [
             'php',
@@ -300,10 +308,6 @@ final class LicenseCheckPluginTest extends TestCase
         }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $proc->run();
-
-        $this->oldenv = getenv('COMPOSER_HOME');
-        $_SERVER['COMPOSER_HOME'] = $this->composerHomeDir;
-        putenv('COMPOSER_HOME=' . $_SERVER['COMPOSER_HOME']);
 
         $cmd = [
             'php',
@@ -323,10 +327,10 @@ final class LicenseCheckPluginTest extends TestCase
             'WARNING: Licenses "BSD-3-Clause" of package "sebastian/version" are not all',
             $this->cleanOutput($proc->getErrorOutput())
         );
-        self::assertSame(0, (int) $exitcode);
+        self::assertSame(0, $exitcode);
     }
 
-    private static function getUniqueTmpDirectory()
+    private static function getUniqueTmpDirectory(): string
     {
         $attempts = 5;
         $root = sys_get_temp_dir();
@@ -339,14 +343,17 @@ final class LicenseCheckPluginTest extends TestCase
             }
 
             if (!file_exists($unique) && Silencer::call('mkdir', $unique, 0777)) {
-                return realpath($unique);
+                $path = realpath($unique);
+                if ($path !== false) {
+                    return $path;
+                }
             }
         } while (--$attempts);
 
         throw new \RuntimeException('Failed to create a unique temporary directory.');
     }
 
-    private static function ensureDirectoryExistsAndClear($directory)
+    private static function ensureDirectoryExistsAndClear(string $directory): void
     {
         $fs = new Filesystem();
 
@@ -357,11 +364,10 @@ final class LicenseCheckPluginTest extends TestCase
         mkdir($directory, 0777, true);
     }
 
-    private function cleanOutput($output)
+    private function cleanOutput(string $output): string
     {
         $processed = '';
 
-        /** @noinspection ForeachInvariantsInspection */
         for ($i = 0, $maxLength = strlen($output); $i < $maxLength; $i++) {
             if ($output[$i] === "\x08") {
                 $processed = substr($processed, 0, -1);
@@ -438,7 +444,7 @@ _EOT;
         if ('\\' !== DIRECTORY_SEPARATOR) {
             return "'" . str_replace("'", "'\\''", $argument) . "'";
         }
-        if ('' === $argument = (string) $argument) {
+        if ('' === $argument) {
             return '""';
         }
         if (false !== strpos($argument, "\0")) {
