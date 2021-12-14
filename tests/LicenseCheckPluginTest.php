@@ -2,6 +2,7 @@
 
 namespace Metasyntactical\Composer\LicenseCheck;
 
+use Composer\InstalledVersions;
 use Composer\Util\Filesystem;
 use Composer\Util\Silencer;
 use PHPUnit\Framework\TestCase;
@@ -19,9 +20,12 @@ final class LicenseCheckPluginTest extends TestCase
     private string $composerHomeDir;
     private string $composerExecutable;
     private string $projectDir;
+    private bool $cmdAsArray = false;
 
     public function setUp(): void
     {
+        $this->cmdAsArray = version_compare(InstalledVersions::getVersion('symfony/process' ), '3.3.0', 'ge');
+
         $this->oldcwd = getcwd();
         $this->testDir = self::getUniqueTmpDirectory();
         $this->composerHomeDir = $this->testDir.'/home';
@@ -69,6 +73,9 @@ final class LicenseCheckPluginTest extends TestCase
             '-v',
             'install',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -113,6 +120,9 @@ final class LicenseCheckPluginTest extends TestCase
             '-v',
             'install',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -124,6 +134,9 @@ final class LicenseCheckPluginTest extends TestCase
             '--no-ansi',
             'check-licenses',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -166,6 +179,9 @@ final class LicenseCheckPluginTest extends TestCase
             '-v',
             'install',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -177,6 +193,9 @@ final class LicenseCheckPluginTest extends TestCase
             '--no-ansi',
             'check-licenses',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -214,6 +233,9 @@ final class LicenseCheckPluginTest extends TestCase
             '--no-plugins',
             'install',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $proc->run();
 
@@ -228,6 +250,9 @@ final class LicenseCheckPluginTest extends TestCase
             'require',
             'sebastian/version:^2.0',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -270,6 +295,9 @@ final class LicenseCheckPluginTest extends TestCase
             '--no-plugins',
             'install',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $proc->run();
 
@@ -285,6 +313,9 @@ final class LicenseCheckPluginTest extends TestCase
             'require',
             'sebastian/version:^2.0',
         ];
+        if (!$this->cmdAsArray) {
+            $cmd = implode(' ', array_map([$this, 'escapeArgument'], $cmd));
+        }
         $proc = new Process($cmd, $this->projectDir, null, null, 300);
         $exitcode = $proc->run();
 
@@ -344,6 +375,7 @@ final class LicenseCheckPluginTest extends TestCase
 
     private function writeComposerJson(string $projectRoot, array $requires = null, array $extra = []): void
     {
+        $projectRoot = str_replace('\\', '/', $projectRoot);
         if ($requires === null) {
             $requires = [
                 "metasyntactical/composer-plugin-license-check" => "dev-main@dev",
@@ -399,5 +431,24 @@ final class LicenseCheckPluginTest extends TestCase
 }
 _EOT;
         file_put_contents($this->projectDir . '/composer.json', $composerJson);
+    }
+
+    private function escapeArgument(string $argument): string
+    {
+        if ('\\' !== DIRECTORY_SEPARATOR) {
+            return "'".str_replace("'", "'\\''", $argument)."'";
+        }
+        if ('' === $argument = (string) $argument) {
+            return '""';
+        }
+        if (false !== strpos($argument, "\0")) {
+            $argument = str_replace("\0", '?', $argument);
+        }
+        if (!preg_match('/[\/()%!^"<>&|\s]/', $argument)) {
+            return $argument;
+        }
+        $argument = preg_replace('/(\\\\+)$/', '$1$1', $argument);
+
+        return '"'.str_replace(array('"', '^', '%', '!', "\n"), array('""', '"^^"', '"^%"', '"^!"', '!LF!'), $argument).'"';
     }
 }

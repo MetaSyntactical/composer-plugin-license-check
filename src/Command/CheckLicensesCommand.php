@@ -67,7 +67,13 @@ EOT
 
                 $table = new Table($output);
                 $table->setStyle('compact');
-                $table->getStyle()->setVerticalBorderChars('', '');
+                $style = $table->getStyle();
+                if (method_exists($style, 'setVerticalBorderChars')) {
+                    $style->setVerticalBorderChars('', '');
+                }
+                if (method_exists($style, 'setVerticalBorderChar')) {
+                    $style->setVerticalBorderChar('');
+                }
                 $table->getStyle()->setCellRowContentFormat('%s  ');
                 $table->setHeaders(['Name', 'Version', 'License', 'Allowed to Use?']);
                 /** @noinspection ForeachSourceInspection */

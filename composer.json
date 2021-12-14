@@ -1,6 +1,6 @@
 {
   "name": "metasyntactical/composer-plugin-license-check",
-  "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
+  "description": "Plugin for Composer to restrict installation of packages to valid licenses.",
   "license": "MIT",
   "type": "composer-plugin",
   "require": {
