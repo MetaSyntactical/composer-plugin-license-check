@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TOOL_DIR="psalm"
+TOOL_DIR="infection"
 TOOL_BIN="psalm-plugin"
 
 SOURCE="${BASH_SOURCE[0]}"

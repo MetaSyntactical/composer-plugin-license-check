@@ -21,5 +21,5 @@ docker \
     -v "${CURRENT_PATH}:${DOCKER_CURRENT_PATH}" \
     -w "${DOCKER_CURRENT_PATH}" \
     "${PHP_IMAGE}" \
-    "${DOCKER_WEBROOT}/vendor/bin/phpunit" \
+    "${DOCKER_WEBROOT}/.tools/.bin/infection" \
         "${@}"
