@@ -16,8 +16,8 @@ final class ComposerConfigTest extends TestCase
     {
         $config = new ComposerConfig([]);
 
-        self::assertEquals([], $config->whitelist());
-        self::assertEquals([], $config->blacklist());
-        self::assertEquals([], $config->whitelistedPackages());
+        self::assertEquals([], $config->allowList());
+        self::assertEquals([], $config->denyList());
+        self::assertEquals([], $config->allowePackages());
     }
 }

@@ -6,41 +6,41 @@ namespace Metasyntactical\Composer\LicenseCheck;
 
 final class ComposerConfig
 {
-    private array $whitelist;
-    private array $blacklist;
-    private array $whitelistedPackages;
+    private array $allowList;
+    private array $denyList;
+    private array $allowedPackages;
 
     /**
-     * @psalm-param array{whitelist?: list<mixed>, blacklist?: list<mixed>, whitelisted-packages?: list<mixed>} $options
+     * @psalm-param array{allow-list?: list<mixed>, deny-list?: list<mixed>, allowed-packages?: list<mixed>} $options
      */
     public function __construct(array $options)
     {
-        $this->whitelist = array_filter(
-            $options['whitelist'] ?? [],
+        $this->allowList = array_filter(
+            $options['allow-list'] ?? [],
             'is_string',
         );
-        $this->blacklist = array_filter(
-            $options['blacklist'] ?? [],
+        $this->denyList = array_filter(
+            $options['deny-list'] ?? [],
             'is_string',
         );
-        $this->whitelistedPackages = array_filter(
-            $options['whitelisted-packages'] ?? [],
+        $this->allowedPackages = array_filter(
+            $options['allowed-packages'] ?? [],
             'is_string',
         );
     }
 
-    public function whitelist(): array
+    public function allowList(): array
     {
-        return $this->whitelist;
+        return $this->allowList;
     }
 
-    public function blacklist(): array
+    public function denyList(): array
     {
-        return $this->blacklist;
+        return $this->denyList;
     }
 
-    public function whitelistedPackages(): array
+    public function allowePackages(): array
     {
-        return $this->whitelistedPackages;
+        return $this->allowedPackages;
     }
 }

@@ -117,11 +117,11 @@ final class LicenseCheckPluginTest extends TestCase
             ],
             [
                 "metasyntactical/composer-plugin-license-check" => [
-                    "whitelist" => [
+                    "allow-list" => [
                         "MIT",
                         "BSD-3-Clause",
                     ],
-                    "blacklist" => [
+                    "deny-list" => [
                         "MIT",
                     ],
                 ],
@@ -163,7 +163,7 @@ final class LicenseCheckPluginTest extends TestCase
         self::assertSame(1, $exitcode);
     }
 
-    public function testLicenseCheckCommandWithWhitelistedPackage(): void
+    public function testLicenseCheckCommandWithAllowedPackage(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson(
@@ -175,10 +175,10 @@ final class LicenseCheckPluginTest extends TestCase
             ],
             [
                 "metasyntactical/composer-plugin-license-check" => [
-                    'whitelist' => [
+                    'allow-list' => [
                         'MIT',
                     ],
-                    'whitelisted-packages' => [
+                    'allowed-packages' => [
                         'sebastian/version' => '*',
                     ],
                 ],
@@ -216,7 +216,7 @@ final class LicenseCheckPluginTest extends TestCase
         $exitcode = $proc->run();
 
         self::assertStringContainsString('1.1.0     MIT           yes', $this->cleanOutput($proc->getOutput()));
-        self::assertStringContainsString('2.0.1     BSD-3-Clause  no (whitelisted)', $this->cleanOutput($proc->getOutput()));
+        self::assertStringContainsString('2.0.1     BSD-3-Clause  no (explicitly allowed)', $this->cleanOutput($proc->getOutput()));
         self::assertSame(0, $exitcode);
     }
 
@@ -231,7 +231,7 @@ final class LicenseCheckPluginTest extends TestCase
             ],
             [
                 "metasyntactical/composer-plugin-license-check" => [
-                    'whitelist' => [
+                    'allow-list' => [
                         'MIT',
                     ],
                 ],
@@ -273,7 +273,7 @@ final class LicenseCheckPluginTest extends TestCase
         self::assertSame(1, $exitcode);
     }
 
-    public function testLicenseCheckSucceedsWithWarningIfPackageIsWhitelisted(): void
+    public function testLicenseCheckSucceedsWithWarningIfPackageIsAllowed(): void
     {
         $projectRoot = dirname(__DIR__);
         $this->writeComposerJson(
@@ -284,10 +284,10 @@ final class LicenseCheckPluginTest extends TestCase
             ],
             [
                 "metasyntactical/composer-plugin-license-check" => [
-                    'whitelist' => [
+                    'allow-list' => [
                         'MIT',
                     ],
-                    'whitelisted-packages' => [
+                    'allowed-packages' => [
                         'sebastian/version' => '*',
                     ],
                 ],
@@ -402,7 +402,7 @@ final class LicenseCheckPluginTest extends TestCase
       "type": "package",
       "package": {
         "name": "metasyntactical/composer-plugin-license-check",
-        "description": "Plugin for Composer to restrict installation of packages to valid licenses via whitelist.",
+        "description": "Plugin for Composer to restrict installation of packages to valid licenses via allow-list.",
         "license": "MIT",
         "type": "composer-plugin",
         "require": {

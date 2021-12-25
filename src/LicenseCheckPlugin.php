@@ -30,11 +30,11 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
 
     private IOInterface $io;
 
-    private array $licenseWhitelist = [];
+    private array $allowedLicenses = [];
 
-    private array $licenseBlacklist = [];
+    private array $deniedLicenses = [];
 
-    private array $whitelistedPackages = [];
+    private array $allowedPackages = [];
 
     public function __construct()
     {
@@ -51,9 +51,9 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
 
         $config = $this->getConfig($rootPackage);
 
-        $this->licenseWhitelist = $config->whitelist();
-        $this->licenseBlacklist = $config->blacklist();
-        $this->whitelistedPackages = $config->whitelistedPackages();
+        $this->allowedLicenses = $config->allowList();
+        $this->deniedLicenses = $config->denyList();
+        $this->allowedPackages = $config->allowePackages();
     }
 
     public function deactivate(Composer $composer, IOInterface $io): void
@@ -133,11 +133,11 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
         }
 
         $allowedToUse = true;
-        if ($this->licenseBlacklist) {
-            $allowedToUse = !array_intersect($packageLicenses, $this->licenseBlacklist);
+        if ($this->deniedLicenses) {
+            $allowedToUse = !array_intersect($packageLicenses, $this->deniedLicenses);
         }
-        if ($allowedToUse && $this->licenseWhitelist) {
-            $allowedToUse = (bool) array_intersect($packageLicenses, $this->licenseWhitelist);
+        if ($allowedToUse && $this->allowedLicenses) {
+            $allowedToUse = (bool) array_intersect($packageLicenses, $this->allowedLicenses);
         }
 
         if ($package->getName() === 'metasyntactical/composer-plugin-license-check') {
@@ -145,7 +145,7 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
         }
 
         if (!$allowedToUse) {
-            if (!array_key_exists($package->getPrettyName(), $this->whitelistedPackages)) {
+            if (!array_key_exists($package->getPrettyName(), $this->allowedPackages)) {
                 throw new LicenseNotAllowedException(
                     sprintf(
                         'ERROR: Licenses "%s" of package "%s" are not allowed to be used in the project. Installation failed.',
@@ -156,7 +156,7 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
             }
             $this->io->writeError(
                 sprintf(
-                    'WARNING: Licenses "%s" of package "%s" are not allowed to be used in the project but the package has been whitelisted.',
+                    'WARNING: Licenses "%s" of package "%s" are not allowed to be used in the project but the package has been explicitly allowed.',
                     implode(', ', $packageLicenses),
                     $package->getPrettyName()
                 )
@@ -168,7 +168,7 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
     {
         $config = $package->getExtra()[self::PLUGIN_PACKAGE_NAME] ?? [];
         assert(is_array($config));
-        /** @psalm-var array{whitelist?: list<mixed>, blacklist?: list<mixed>, whitelisted-packages?: list<mixed>} $config */
+        /** @psalm-var array{allow-list?: list<mixed>, deny-list?: list<mixed>, allowed-packages?: list<mixed>} $config */
 
         return new ComposerConfig($config);
     }

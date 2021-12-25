@@ -28,16 +28,19 @@ composer.json.
 {
   "extra": {
     "metasyntactical/composer-plugin-license-check": {
-      "whitelist": [],
-      "blacklist": []
+      "allow-list": [],
+      "deny-list": [],
+      "allowed-packages": []
     }
   }
 }
 ```
 
-Just specify the allowed (whitelist) or forbidden (blacklist) licenses as array.
+Just specify the allowed or forbidden licenses as array.
 Use the license identifiers allowed/used in the version-property of the composer.json
 to be compatible with the general usage.
+
+One may specify additional packages which are allowed despite of license violations.
 
 **Important Note**: This plugin is licensed under MIT license. Even if you forbid
 to use MIT licensed packages in your project the plugin itself is the only package
