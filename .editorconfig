@@ -1,15 +1,15 @@
 root = true
 
 [*]
-line_ending = lf
+end_of_line = lf
 insert_final_newline = true
 charset = utf-8
 indent_style = space
 indent_size = 4
-trim_whitespace = true
+trim_trailing_whitespace = true
 
 [*.{md,rst}]
-trim_whitespace = false
+trim_trailing_whitespace = false
 
 [*.{json,yml}]
 indent_size = 2
