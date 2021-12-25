@@ -97,9 +97,9 @@ EOT
                         $dependencyName,
                         $dependency['version'],
                         implode(', ', $dependency['license']) ?: 'none',
-                        $dependency['allowed_to_use'] ? 'yes' : 'no' . ($dependency['whitelisted'] ? ' (whitelisted)' : ''),
+                        $dependency['allowed_to_use'] ? 'yes' : 'no' . ($dependency['is_allowed'] ? ' (explicitly allowed)' : ''),
                     ]);
-                    $violationFound = $violationFound || (!$dependency['allowed_to_use'] && !$dependency['whitelisted']);
+                    $violationFound = $violationFound || (!$dependency['allowed_to_use'] && !$dependency['is_allowed']);
                 }
                 $table->render();
                 break;
@@ -130,7 +130,7 @@ EOT
      *                      version: string,
      *                      license: list<string>,
      *                      allowed_to_use: bool,
-     *                      whitelisted: bool
+     *                      is_allowed: bool
      *                  }>
      *               }
      */
@@ -156,33 +156,33 @@ EOT
     {
         $config = $package->getExtra()[LicenseCheckPlugin::PLUGIN_PACKAGE_NAME] ?? [];
         assert(is_array($config));
-        /** @psalm-var array{whitelist?: list<mixed>, blacklist?: list<mixed>, whitelisted-packages?: list<mixed>} $config */
+        /** @psalm-var array{allow-list?: list<mixed>, deny-list?: list<mixed>, allowed-packages?: list<mixed>} $config */
 
         return new ComposerConfig($config);
     }
 
     /**
-     * @psalm-return array{version: string, license: list<string>, allowed_to_use: bool, whitelisted: bool}
+     * @psalm-return array{version: string, license: list<string>, allowed_to_use: bool, is_allowed: bool}
      */
     private function calculatePackageInfo(RootPackageInterface $rootPackage, CompletePackageInterface $package): array
     {
         $allowedToUse = true;
-        $whitelisted = false;
+        $isAllowed = false;
 
         $config = $this->getConfig($rootPackage);
 
-        $whitelist = $config->whitelist();
-        $blacklist = $config->blacklist();
-        $whitelistedPackages = $config->whitelistedPackages();
+        $allowList = $config->allowList();
+        $denyList = $config->denyList();
+        $allowedPackages = $config->allowePackages();
 
-        if ($blacklist) {
-            $allowedToUse = !array_intersect($package->getLicense(), $blacklist);
+        if ($denyList) {
+            $allowedToUse = !array_intersect($package->getLicense(), $denyList);
         }
-        if ($allowedToUse && $whitelist) {
-            $allowedToUse = !!array_intersect($package->getLicense(), $whitelist);
+        if ($allowedToUse && $allowList) {
+            $allowedToUse = !!array_intersect($package->getLicense(), $allowList);
         }
-        if (!$allowedToUse && array_key_exists($package->getPrettyName(), $whitelistedPackages)) {
-            $whitelisted = true;
+        if (!$allowedToUse && array_key_exists($package->getPrettyName(), $allowedPackages)) {
+            $isAllowed = true;
         }
 
         if ($package->getName() === 'metasyntactical/composer-plugin-license-check') {
@@ -196,7 +196,7 @@ EOT
             'version' => $package->getFullPrettyVersion(),
             'license' => $packageLicense,
             'allowed_to_use' => $allowedToUse,
-            'whitelisted' => $whitelisted,
+            'is_allowed' => $isAllowed,
         ];
     }
 
