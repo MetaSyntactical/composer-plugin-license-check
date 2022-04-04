@@ -11,5 +11,11 @@
                 "Overwrite current-working-directory for autoloading tool": "patches/current-working-directory.diff"
             }
         }
+    },
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true,
+            "infection/extension-installer": true
+        }
     }
 }

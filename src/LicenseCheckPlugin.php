@@ -13,6 +13,7 @@ use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
 use Composer\Package\CompletePackageInterface;
+use Composer\Package\PackageInterface;
 use Composer\Package\RootPackageInterface;
 use Composer\Plugin\Capability\Capability as CapabilityInterface;
 use Composer\Plugin\Capability\CommandProvider as CommandProviderCapability;
@@ -97,27 +98,16 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
 
     public function handleEventAndCheckLicense(PackageEvent $event): void
     {
-        $operation = $event->getOperation();
-        $operationType = $operation->getOperationType();
+        $package = $this->resolvePackage($event);
 
-        switch ($operationType) {
-            case InstallOperation::TYPE:
-                /** @var InstallOperation $operation */
-                $package = $operation->getPackage();
+        if ($package === null) {
+            if ($event->getIO()->isVerbose()) {
+                $event->getIO()->writeError(
+                    '<info>The plugin code was invoked by a not handled event. This most likely is an error in the plugin code. Please report at: https://github.com/MetaSyntactical/composer-plugin-license-check/issues</info>'
+                );
+            }
 
-                if ($package->getName() === self::PLUGIN_PACKAGE_NAME) {
-                    $this->composer->getEventDispatcher()->addSubscriber($this);
-                    if ($event->getIO()->isVerbose()) {
-                        $event->getIO()->writeError('<info>The Metasyntactical LicenseCheck Plugin has been enabled.</info>');
-                    }
-                }
-                break;
-            case UpdateOperation::TYPE:
-                /** @var UpdateOperation $operation */
-                $package = $operation->getTargetPackage();
-                break;
-            default:
-                return;
+            return;
         }
 
         if ($package->getName() === self::PLUGIN_PACKAGE_NAME) {
@@ -171,5 +161,29 @@ final class LicenseCheckPlugin implements PluginInterface, CapableInterface, Eve
         /** @psalm-var array{allow-list?: list<mixed>, deny-list?: list<mixed>, allowed-packages?: list<mixed>} $config */
 
         return new ComposerConfig($config);
+    }
+
+    private function resolvePackage(PackageEvent $event): ?PackageInterface
+    {
+        $operation = $event->getOperation();
+
+        if ($operation instanceof InstallOperation) {
+            $package = $operation->getPackage();
+
+            if ($package->getName() === self::PLUGIN_PACKAGE_NAME) {
+                $this->composer->getEventDispatcher()->addSubscriber($this);
+                if ($event->getIO()->isVerbose()) {
+                    $event->getIO()->writeError('<info>The Metasyntactical LicenseCheck Plugin has been enabled.</info>');
+                }
+            }
+
+            return $package;
+        }
+
+        if ($operation instanceof UpdateOperation) {
+            return $operation->getTargetPackage();
+        }
+
+        return null;
     }
 }
