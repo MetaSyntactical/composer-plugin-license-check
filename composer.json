@@ -27,5 +27,10 @@
     "bamarni-bin":  {
       "target-directory": ".tools"
     }
+  },
+  "config": {
+    "allow-plugins": {
+      "bamarni/composer-bin-plugin": true
+    }
   }
 }
