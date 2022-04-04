@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ff0143edad726331aa88a90cccd044d0",
+    "content-hash": "dc8ae089ac0baec1dff8fbc58500106b",
     "packages": [],
     "packages-dev": [
         {
@@ -2981,6 +2981,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/filesystem/zipball/6c9e4c41f2c51dfde3db298594ed9cba55dbf5ff",
                 "reference": "6c9e4c41f2c51dfde3db298594ed9cba55dbf5ff",
+
                 "shasum": ""
             },
             "require": {
