@@ -397,6 +397,11 @@ final class LicenseCheckPluginTest extends TestCase
   "minimum-stability": "dev",
   "require": {$requiresJson},
   "extra": {$extraJson},
+  "config": {
+    "allow-plugins": {
+      "metasyntactical/composer-plugin-license-check": true
+    }
+  },
   "repositories": [
     {
       "type": "package",
