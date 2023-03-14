@@ -1,6 +1,6 @@
 {
     "require": {
-        "roave/infection-static-analysis-plugin": "^1.12",
+        "roave/infection-static-analysis-plugin": "^1.23.0",
         "vimeo/psalm": "^4.15",
         "psalm/plugin-phpunit": "^0.16.1",
         "cweagans/composer-patches": "^1.7"

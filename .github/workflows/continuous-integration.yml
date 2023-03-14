@@ -23,6 +23,7 @@ jobs:
         php-version:
           - "8.0"
           - "8.1"
+          - "8.2"
         operating-system:
           - "ubuntu-latest"
           - "windows-latest"
@@ -73,6 +74,7 @@ jobs:
           - "locked"
         php-version:
           - "8.0"
+          - "8.2"
         operating-system:
           - "ubuntu-latest"
 
@@ -126,6 +128,7 @@ jobs:
         php-version:
           - "8.0"
           - "8.1"
+          - "8.2"
         operating-system:
           - "ubuntu-latest"
 
@@ -177,7 +180,7 @@ jobs:
         dependencies:
           - "locked"
         php-version:
-          - "8.1"
+          - "8.2"
         operating-system:
           - "ubuntu-latest"
 

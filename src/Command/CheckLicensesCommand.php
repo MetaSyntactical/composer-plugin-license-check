@@ -45,9 +45,18 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $composer = $this->getComposer();
-        if ($composer === null) {
-            throw new \LogicException('Composer not found. Maybe the application is not correctly instantiated?');
+        if (method_exists($this, 'requireComposer')) {
+            $composer = $this->requireComposer();
+        } else {
+            /**
+             * Since composer 2.3.0 the method is deprecated. We keep the old code flow for bc.
+             *
+             * @psalm-suppress DeprecatedMethod
+             */
+            $composer = $this->getComposer();
+            if ($composer === null) {
+                throw new \LogicException('Composer not found. Maybe the application is not correctly instantiated?');
+            }
         }
 
         $commandEvent = new CommandEvent(PluginEvents::COMMAND, 'check-licenses', $input, $output);
