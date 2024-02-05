@@ -16,7 +16,7 @@ jobs:
           cmd: 'jq .name composer.json -r'
 
       - id: mastodon
-        uses: cbrgm/mastodon-github-action@v1
+        uses: cbrgm/mastodon-github-action@v2
         env:
           MASTODON_URL: https://toot.metasyntactical.com
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
