@@ -46,7 +46,7 @@ final class LicenseCheckPluginTest extends TestCase
 
         $fs = new Filesystem();
 
-        if ($this->testDir) {
+        if ($this->testDir !== null) {
             $fs->removeDirectory($this->testDir);
             $this->testDir = null;
         }
@@ -56,7 +56,7 @@ final class LicenseCheckPluginTest extends TestCase
 
     private function resetComposerHome(Filesystem $fs): void
     {
-        if ($this->oldenv) {
+        if ($this->oldenv !== null) {
             $composerHome = getenv('COMPOSER_HOME');
             if (is_string($composerHome)) {
                 $fs->removeDirectory($composerHome);
