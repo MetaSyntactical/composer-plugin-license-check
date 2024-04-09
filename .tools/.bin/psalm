@@ -14,9 +14,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 TOOLS_DIR="$( dirname "$DIR" )"
 PROJECT_ROOT_DIR="$( dirname "$TOOLS_DIR" )"
 
-if [[ ! -x "$PROJECT_ROOT_DIR/vendor/bin/$TOOL_BIN" ]]; then
+if [[ ! -x "$TOOLS_DIR/$TOOL_DIR/vendor/bin/$TOOL_BIN" ]]; then
     if [[ ! -x "$TOOLS_DIR/composer/vendor/bin/composer" ]]; then
-        >2 echo "No composer present to install dependencies for tool."
+        >&2 echo "No composer present to install dependencies for tool."
         exit 2
     fi
 
