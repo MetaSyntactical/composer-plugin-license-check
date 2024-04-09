@@ -25,7 +25,9 @@
   "extra": {
     "class": "Metasyntactical\\Composer\\LicenseCheck\\LicenseCheckPlugin",
     "bamarni-bin":  {
-      "target-directory": ".tools"
+      "target-directory": ".tools",
+      "bin-links": false,
+      "forward-command": false
     }
   },
   "config": {
