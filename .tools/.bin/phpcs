@@ -23,4 +23,4 @@ if [[ ! -x "$PROJECT_ROOT_DIR/vendor/bin/$TOOL_BIN" ]]; then
     cd "$PROJECT_ROOT_DIR" && "$TOOLS_DIR/composer/vendor/bin/composer" bin $TOOL_DIR install --no-interaction
 fi
 
-php -d memory_limit=2G "$PROJECT_ROOT_DIR/vendor/bin/$TOOL_BIN" "$@"
+php -d memory_limit=2G "$TOOLS_DIR/$TOOL_DIR/vendor/bin/$TOOL_BIN" "$@"
