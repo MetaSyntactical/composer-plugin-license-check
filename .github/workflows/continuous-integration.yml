@@ -114,7 +114,7 @@ jobs:
         run: "composer bin phpcs install --no-interaction --no-progress"
 
       - name: "Coding Standard"
-        run: "vendor/bin/phpcs"
+        run: ".tools/phpcs/vendor/bin/phpcs"
 
   static-analysis-psalm:
     name: "Static Analysis by Psalm"
@@ -168,7 +168,7 @@ jobs:
         run: "composer bin infection install --no-interaction --no-progress"
 
       - name: "psalm"
-        run: "vendor/bin/psalm --shepherd --stats"
+        run: ".tools/infection/vendor/bin/psalm --shepherd --stats"
 
   mutation-tests:
     name: "Mutation tests"
@@ -220,7 +220,7 @@ jobs:
         run: "composer bin infection install --no-interaction --no-progress"
 
       - name: "Infection"
-        run: "vendor/bin/roave-infection-static-analysis-plugin --threads=$(nproc)"
+        run: ".tools/infection/vendor/bin/roave-infection-static-analysis-plugin --threads=$(nproc)"
         env:
           INFECTION_BADGE_API_KEY: ${{ secrets.INFECTION_BADGE_API_KEY }}
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
