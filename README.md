@@ -30,7 +30,7 @@ composer.json.
     "metasyntactical/composer-plugin-license-check": {
       "allow-list": [],
       "deny-list": [],
-      "allowed-packages": []
+      "allowed-packages": {}
     }
   }
 }
@@ -41,6 +41,9 @@ Use the license identifiers allowed/used in the version-property of the composer
 to be compatible with the general usage.
 
 One may specify additional packages which are allowed despite of license violations.
+As key the package name has to be used (similar to `require` and `require-dev`) and
+it allows for specifying semantic versioning constraints as value (which currently
+is not checked!).
 
 **Important Note**: This plugin is licensed under MIT license. Even if you forbid
 to use MIT licensed packages in your project the plugin itself is the only package
