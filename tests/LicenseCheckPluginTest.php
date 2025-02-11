@@ -411,7 +411,7 @@ final class LicenseCheckPluginTest extends TestCase
         "license": "MIT",
         "type": "composer-plugin",
         "require": {
-          "php": "8.1.*|8.2.*|8.3.*",
+          "php": "8.1.*|8.2.*|8.3.*|8.4.*",
           "composer-plugin-api": "^2.0"
         },
         "require-dev": {
